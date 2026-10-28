@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'none'; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<title>Church Scripture — Access codes</title>
+<style>
+:root{--bg:#0b1220;--panel:#121d30;--panel2:#192740;--text:#eef4ff;--muted:#9fb0ca;--line:#2c3d59;--accent:#66d9b4}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+main{max-width:640px;margin:auto;padding:18px;display:grid;gap:14px}
+h1{font-size:1.3rem;margin:6px 0 0}
+h2{font-size:1rem;margin:0 0 8px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:15px;padding:16px}
+.help{color:var(--muted);font-size:.9rem}
+label{display:block;font-size:.85rem;color:var(--muted);margin:9px 0 4px}
+input,button{font:inherit;border-radius:9px;border:1px solid var(--line);padding:10px;background:#0b1526;color:var(--text);width:100%;min-width:0}
+button{cursor:pointer;background:var(--panel2);font-weight:650;margin-top:10px}
+button.primary{background:var(--accent);color:#06251d;border-color:var(--accent)}
+button:disabled{opacity:.45;cursor:not-allowed}
+.status{padding:10px;border-radius:9px;background:#0b1526;border:1px solid var(--line);margin-top:10px;font-size:.92rem;white-space:pre-wrap}
+.status.good{border-color:#27795f}.status.warn{border-color:#8d6740}
+.hidden{display:none!important}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+details{margin-top:12px;border-top:1px solid var(--line);padding-top:10px}
+summary{cursor:pointer;color:var(--muted)}
+#codeBox{margin-top:12px;padding:18px;border-radius:12px;background:#0b1526;border:2px solid var(--accent);text-align:center}
+#codeText{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:clamp(20px,5vw,30px);letter-spacing:.12em;font-weight:700;color:var(--accent);word-break:break-all;user-select:all;margin:8px 0}
+ol{padding-left:20px;margin:6px 0}
+@media print{body *{visibility:hidden}#codeBox,#codeBox *{visibility:visible}#codeBox{position:absolute;left:0;top:0;width:100%;border:none}}
+</style>
+</head>
+<body>
+<main>
+<div>
+  <h1>Church Scripture — Access codes</h1>
+  <p class="help">Create your church account once, then generate an access code. Give the code only to people who run the projector or the control room. Generating a new code stops the old one from working.</p>
+</div>
+
+<section class="panel">
+  <h2>1. Church account</h2>
+  <div id="noAccount">
+    <label for="nUser">Username (at least 3 characters)</label>
+    <input id="nUser" autocomplete="username">
+    <label for="nPass">Password (at least 12 characters)</label>
+    <input id="nPass" type="password" autocomplete="new-password">
+    <label for="nPass2">Repeat password</label>
+    <input id="nPass2" type="password" autocomplete="new-password">
+    <button id="createBtn" class="primary">Create account</button>
+  </div>
+  <div id="hasAccount" class="hidden">
+    <p>Signed up as <strong id="acctName"></strong>.</p>
+    <details>
+      <summary>Change password</summary>
+      <label for="cPass">Current password</label>
+      <input id="cPass" type="password" autocomplete="current-password">
+      <label for="cNew">New password (at least 12 characters)</label>
+      <input id="cNew" type="password" autocomplete="new-password">
+      <label for="cNew2">Repeat new password</label>
+      <input id="cNew2" type="password" autocomplete="new-password">
+      <button id="changeBtn">Change password</button>
+    </details>
+    <details>
+      <summary>Delete account</summary>
+      <p class="help">This removes the account and its access code. Control rooms and projectors will stop working until you create a new account and code.</p>
+      <label for="dPass">Current password</label>
+      <input id="dPass" type="password" autocomplete="current-password">
+      <button id="deleteBtn">Delete account</button>
+    </details>
+  </div>
+  <div id="accMsg" class="status">Create an account to begin.</div>
+</section>
+
+<section class="panel">
+  <h2>2. Access code</h2>
+  <p class="help" id="codeInfo">No access code yet.</p>
+  <label for="gPass">Enter your password to create a new access code</label>
+  <input id="gPass" type="password" autocomplete="current-password">
+  <button id="genBtn" class="primary">Generate new access code</button>
+  <div id="codeBox" class="hidden">
+    <div class="help">Access code</div>
+    <div id="codeText"></div>
+    <div class="row2"><button id="copyCode">Copy code</button><button id="printCode">Print</button></div>
+  </div>
+  <div id="genStatus" class="status">The code is shown only once. Write it down or copy it before you leave this page.</div>
+</section>
+
+<section class="panel">
+  <h2>How to use the code</h2>
+  <ol>
+    <li>Control room: open <strong>index.html</strong> and sign in with your username, password and access code.</li>
+    <li>Projector: open <strong>generate.html</strong> on the screen computer and enter the access code.</li>
+    <li>If a code is lost or shared with the wrong person, generate a new one. Everyone must then use the new code.</li>
+  </ol>
+  <p class="help">Keep this page and the other files in the same folder. Open them through http://localhost or https, not by double-clicking, so that encryption works.</p>
+</section>
+</main>
+
+<script>
+'use strict';
+/* Shared security helpers. Codes never travel in plain text:
+   - the access code becomes an AES-256-GCM key (PBKDF2, 200,000 rounds)
+   - the internet channel name is a hash of the code, so it cannot be guessed
+   - every verse is encrypted and authenticated, so forged messages are rejected */
+const CS = (() => {
+  const ITER = 200000;
+  const enc = new TextEncoder(), dec = new TextDecoder();
+  const b64 = u8 => { let s = ''; for (const b of u8) s += String.fromCharCode(b); return btoa(s); };
+  const unb64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+  const normCode = c => String(c || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  const newSalt = () => b64(crypto.getRandomValues(new Uint8Array(16)));
+  async function pbkdf2(secret, saltBytes) {
+    const base = await crypto.subtle.importKey('raw', enc.encode(secret), 'PBKDF2', false, ['deriveBits']);
+    return new Uint8Array(await crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt: saltBytes, iterations: ITER }, base, 256));
+  }
+  async function hashSecret(secret, saltB64) { return b64(await pbkdf2(secret, unb64(saltB64))); }
+  async function checkSecret(secret, saltB64, hashB64) {
+    const got = await hashSecret(secret, saltB64);
+    let diff = got.length ^ hashB64.length;
+    for (let i = 0; i < got.length && i < hashB64.length; i++) diff |= got.charCodeAt(i) ^ hashB64.charCodeAt(i);
+    return diff === 0;
+  }
+  async function sha256hex(text) {
+    const d = new Uint8Array(await crypto.subtle.digest('SHA-256', enc.encode(text)));
+    return [...d].map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+  async function deriveSession(code) {
+    const c = normCode(code);
+    const key = await crypto.subtle.importKey('raw', await pbkdf2(c, enc.encode('church-scripture/v2/key')), 'AES-GCM', false, ['encrypt', 'decrypt']);
+    const topic = 'cs2-' + (await sha256hex('church-scripture/v2/topic|' + c)).slice(0, 40);
+    return { key, topic };
+  }
+  async function seal(key, obj) {
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, enc.encode(JSON.stringify(obj))));
+    return JSON.stringify({ v: 2, iv: b64(iv), ct: b64(ct) });
+  }
+  async function open(key, text) {
+    const env = JSON.parse(text);
+    if (!env || env.v !== 2) throw new Error('unsupported message');
+    const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64(env.iv) }, key, unb64(env.ct));
+    return JSON.parse(dec.decode(pt));
+  }
+  function lockInfo() { try { return JSON.parse(localStorage.getItem('cs_lock') || '{"n":0,"until":0}'); } catch (e) { return { n: 0, until: 0 }; } }
+  function noteFail() { const l = lockInfo(); l.n = (l.n || 0) + 1; if (l.n >= 5) { l.until = Date.now() + 5 * 60 * 1000; l.n = 0; } try { localStorage.setItem('cs_lock', JSON.stringify(l)); } catch (e) {} }
+  function clearFails() { try { localStorage.removeItem('cs_lock'); } catch (e) {} }
+  return { normCode, newSalt, hashSecret, checkSecret, deriveSession, seal, open, lockInfo, noteFail, clearFails };
+})();
+
+
+const $ = id => document.getElementById(id);
+const ACC_ALPHA = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no 0, O, 1 or I, so codes are easy to read aloud
+function newAccessCode() {
+  const bytes = crypto.getRandomValues(new Uint8Array(16));
+  let s = '';
+  for (const b of bytes) s += ACC_ALPHA[b & 31]; // 256 is a multiple of 32, so every letter is equally likely
+  return s.match(/.{4}/g).join('-');
+}
+function accountNow() { try { return JSON.parse(localStorage.getItem('cs_account') || 'null'); } catch (e) { return null; } }
+function saveAccount(a) { localStorage.setItem('cs_account', JSON.stringify(a)); }
+function say(id, msg, type = '') { const el = $(id); el.textContent = msg; el.className = 'status ' + type; }
+function lockMsg() {
+  const l = CS.lockInfo();
+  return l.until > Date.now() ? `Too many failed attempts. Try again in ${Math.ceil((l.until - Date.now()) / 60000)} minute(s).` : null;
+}
+
+function render() {
+  const a = accountNow();
+  $('noAccount').classList.toggle('hidden', !!a);
+  $('hasAccount').classList.toggle('hidden', !a);
+  if (a) {
+    $('acctName').textContent = a.user;
+    $('codeInfo').textContent = a.codeSetAt
+      ? `An access code was created on ${new Date(a.codeSetAt).toLocaleString()}. For security the code itself is not stored, so create a new one if you have lost it.`
+      : 'No access code yet. Create one below.';
+  }
+}
+
+async function createAccount() {
+  const user = $('nUser').value.trim(), p1 = $('nPass').value, p2 = $('nPass2').value;
+  if (user.length < 3) return say('accMsg', 'Username must be at least 3 characters.', 'warn');
+  if (p1.length < 12) return say('accMsg', 'Password must be at least 12 characters.', 'warn');
+  if (p1 !== p2) return say('accMsg', 'The two passwords do not match.', 'warn');
+  $('createBtn').disabled = true;
+  try {
+    const salt = CS.newSalt();
+    saveAccount({ v: 2, user, passSalt: salt, passHash: await CS.hashSecret(p1, salt), createdAt: Date.now() });
+    $('nPass').value = ''; $('nPass2').value = '';
+    say('accMsg', 'Account created. Now generate an access code below.', 'good');
+    render();
+  } catch (e) { say('accMsg', 'Could not create the account in this browser: ' + e.message, 'warn'); }
+  finally { $('createBtn').disabled = false; }
+}
+
+async function changePassword() {
+  const a = accountNow();
+  if (!a) return;
+  const lm = lockMsg(); if (lm) return say('accMsg', lm, 'warn');
+  const cur = $('cPass').value, p1 = $('cNew').value, p2 = $('cNew2').value;
+  if (!(await CS.checkSecret(cur, a.passSalt, a.passHash))) { CS.noteFail(); return say('accMsg', 'Current password is incorrect.', 'warn'); }
+  if (p1.length < 12) return say('accMsg', 'New password must be at least 12 characters.', 'warn');
+  if (p1 !== p2) return say('accMsg', 'The two new passwords do not match.', 'warn');
+  CS.clearFails();
+  a.passSalt = CS.newSalt();
+  a.passHash = await CS.hashSecret(p1, a.passSalt);
+  saveAccount(a);
+  $('cPass').value = ''; $('cNew').value = ''; $('cNew2').value = '';
+  say('accMsg', 'Password changed.', 'good');
+}
+
+async function deleteAccount() {
+  const a = accountNow();
+  if (!a) return;
+  const lm = lockMsg(); if (lm) return say('accMsg', lm, 'warn');
+  if (!(await CS.checkSecret($('dPass').value, a.passSalt, a.passHash))) { CS.noteFail(); return say('accMsg', 'Current password is incorrect.', 'warn'); }
+  if (!confirm('Delete this account and its access code? Control rooms and projectors will stop working.')) return;
+  localStorage.removeItem('cs_account');
+  CS.clearFails();
+  $('dPass').value = '';
+  $('codeBox').classList.add('hidden');
+  say('accMsg', 'Account deleted. You can create a new one above.', 'good');
+  render();
+}
+
+async function generateCode() {
+  const a = accountNow();
+  if (!a) return say('genStatus', 'Create the account first.', 'warn');
+  const lm = lockMsg(); if (lm) return say('genStatus', lm, 'warn');
+  $('genBtn').disabled = true;
+  try {
+    if (!(await CS.checkSecret($('gPass').value, a.passSalt, a.passHash))) { CS.noteFail(); return say('genStatus', 'Password is incorrect.', 'warn'); }
+    CS.clearFails();
+    const code = newAccessCode();
+    a.codeSalt = CS.newSalt();
+    a.codeHash = await CS.hashSecret(CS.normCode(code), a.codeSalt);
+    a.codeSetAt = Date.now();
+    saveAccount(a);
+    $('gPass').value = '';
+    $('codeText').textContent = code;
+    $('codeBox').classList.remove('hidden');
+    say('genStatus', 'New access code created. The old code no longer works. Copy it now, it will not be shown again after you leave this page.', 'good');
+    render();
+  } catch (e) { say('genStatus', 'Could not create the code: ' + e.message, 'warn'); }
+  finally { $('genBtn').disabled = false; }
+}
+
+$('createBtn').onclick = createAccount;
+$('changeBtn').onclick = changePassword;
+$('deleteBtn').onclick = deleteAccount;
+$('genBtn').onclick = generateCode;
+$('copyCode').onclick = async () => {
+  try { await navigator.clipboard.writeText($('codeText').textContent); say('genStatus', 'Access code copied.', 'good'); }
+  catch (e) { say('genStatus', 'Copy failed in this browser. Select the code and copy it by hand.', 'warn'); }
+};
+$('printCode').onclick = () => window.print();
+render();
+</script>
+</body>
+</html>
